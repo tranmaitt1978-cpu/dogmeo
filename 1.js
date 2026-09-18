@@ -1,15 +1,14 @@
 /**
- * hoang.js — Công Nghệ Vip HHOANG 2026
- * Omega Bridge Engine v4 — Tích hợp vào server
- * Developer: HuyHoang
+ * server.js — Công Nghệ Vip PAK 2026
+ * Dice Signal Analyzer — Omega Bridge v4 Engine
+ * Developer: Anh Khôi
  *
  * Nguồn API: https://sunwin-taixiu-dulieu.onrender.com/data
  *
  * Engine: OMEGA BRIDGE v4
- *  - Multi-pattern (Cầu bệt, 1-1, 2-2, 3-3, 4-4, 5-5)
- *  - Run shape, Staircase, Mirror, Cycle
- *  - Markov 1..6, N-gram, Similarity, Recency
- *  - Momentum, Transition matrix
+ *  - Multi-pattern: cầu bệt, 1-1, 2-2, 3-3, 4-4, 5-5, run shape
+ *  - Markov 1..6, N-gram, Similarity (weighted distance)
+ *  - Recency, Momentum, Transition matrix
  *  - Regime detection, Entropy, Conflict detection
  *  - Adaptive evidence weighting
  *  - NO_SIGNAL khi bất định
@@ -90,7 +89,7 @@ const OmegaMath = {
 };
 
 /* ================================================================
-   NORMALIZER — chuyển dữ liệu API sang side T/X
+   NORMALIZER
    ================================================================ */
 
 function normalizeRecord(r) {
@@ -170,8 +169,7 @@ function analyzeEqualBlock(seq) {
         name: "EQUAL_BLOCK_" + current.length,
         probability: p,
         strength: valid.length >= OMEGA_CONFIG.minSupport ? OmegaMath.edge(p) : 0,
-        support: valid.length,
-        category: "BET"
+        support: valid.length
     };
 }
 
@@ -191,8 +189,7 @@ function analyzeAlternating(seq, window) {
         name: "ALT_" + window,
         probability: OmegaMath.clamp(p, 0.05, 0.95),
         strength: ratio * 0.90,
-        support: data.length - 1,
-        category: "ALTERNATION"
+        support: data.length - 1
     };
 }
 
@@ -209,8 +206,7 @@ function analyzeBlock(seq, blockSize) {
         name: "BLOCK_" + blockSize,
         probability: p,
         strength: (t + x) >= OMEGA_CONFIG.minSupport ? OmegaMath.edge(p) : 0,
-        support: t + x,
-        category: "BLOCK"
+        support: t + x
     };
 }
 
@@ -231,8 +227,7 @@ function analyzeRunContinuation(seq) {
         name: "RUN_CONTINUATION",
         probability: p,
         strength: support >= OMEGA_CONFIG.minSupport ? OmegaMath.edge(p) : 0,
-        support,
-        category: "RUN"
+        support
     };
 }
 
@@ -267,8 +262,7 @@ function analyzeRunShape(seq) {
         name: "RUN_SHAPE",
         probability: p,
         strength: OmegaMath.edge(p),
-        support: usable.reduce((sum, s) => sum + s.support, 0),
-        category: "RUN_SHAPE"
+        support: usable.reduce((sum, s) => sum + s.support, 0)
     };
 }
 
@@ -293,8 +287,7 @@ function analyzeStaircase(seq) {
         name: "STAIRCASE",
         probability: p,
         strength: Math.max(incRatio, decRatio) * 0.25,
-        support: comparisons,
-        category: "STAIRCASE"
+        support: comparisons
     };
 }
 
@@ -313,8 +306,7 @@ function analyzeMirror(seq) {
         name: "MIRROR",
         probability: OmegaMath.clamp(p, 0.05, 0.95),
         strength: ratio * 0.25,
-        support: L,
-        category: "MIRROR"
+        support: L
     };
 }
 
@@ -340,8 +332,7 @@ function analyzeCycle(seq) {
         name: "CYCLE",
         probability: OmegaMath.clamp(p, 0.05, 0.95),
         strength: (best.ratio - 0.5) * 1.4,
-        support: best.support,
-        category: "CYCLE"
+        support: best.support
     };
 }
 
@@ -361,8 +352,7 @@ function analyzeMarkov(seq, order) {
         name: "MARKOV_" + order,
         probability: usable ? p : 0.5,
         strength: usable ? OmegaMath.edge(p) : 0,
-        support,
-        category: "MARKOV"
+        support
     };
 }
 
@@ -389,8 +379,7 @@ function analyzeSimilarity(seq, length) {
         name: "SIM_" + length,
         probability: OmegaMath.clamp(p, 0.05, 0.95),
         strength: OmegaMath.edge(p),
-        support: matches,
-        category: "SIMILARITY"
+        support: matches
     };
 }
 
@@ -410,8 +399,7 @@ function analyzeRecency(seq) {
         name: "RECENCY",
         probability: p,
         strength: OmegaMath.edge(p),
-        support: windows.reduce((sum, w) => sum + w.support, 0),
-        category: "RECENCY"
+        support: windows.reduce((sum, w) => sum + w.support, 0)
     };
 }
 
@@ -426,8 +414,7 @@ function analyzeMomentum(seq) {
         name: "MOMENTUM",
         probability: p,
         strength: Math.abs(delta) * 1.5,
-        support: short.length + medium.length + long.length,
-        category: "MOMENTUM"
+        support: short.length + medium.length + long.length
     };
 }
 
@@ -448,8 +435,7 @@ function analyzeTransition(seq) {
         name: "TRANSITION",
         probability: p,
         strength: OmegaMath.edge(p),
-        support,
-        category: "TRANSITION"
+        support
     };
 }
 
@@ -492,7 +478,7 @@ function analyzeEntropy(seq) {
 }
 
 /* ================================================================
-   OMEGA PREDICTION
+   OMEGA PREDICT
    ================================================================ */
 
 function omegaPredict(history) {
@@ -606,7 +592,6 @@ function omegaPredict(history) {
         historySize: history.length,
         signals: ranked.slice(0, 10).map(s => ({
             name: s.name,
-            category: s.category,
             direction: OmegaMath.direction(s.probability) === "T" ? "TAI" : "XIU",
             probability: s.probability,
             strength: s.strength,
@@ -630,13 +615,15 @@ function vnNow() {
 }
 
 /* ================================================================
-   ENGINE STATE
+   STATE
    ================================================================ */
 
 const stats = {
     total: 0,
     correct: 0,
     wrong: 0,
+    fallback_total: 0,
+    fallback_correct: 0,
     noSignal_total: 0,
     start_time: vnNow()
 };
@@ -645,9 +632,10 @@ let lastData = [];
 let lastPrediction = null;
 let predictionLog = [];
 let isFetching = false;
+let errorStreak = 0;
 
 /* ================================================================
-   FETCH & PREDICT
+   FETCH
    ================================================================ */
 
 async function fetchAndAnalyze() {
@@ -665,11 +653,9 @@ async function fetchAndAnalyze() {
         else if (Array.isArray(raw.results)) recordsRaw = raw.results;
 
         const normalized = normalizeRecords(recordsRaw);
-        // Sort giảm dần theo phiên (mới nhất ở đầu) cho UI
         const dataDesc = [...normalized].sort((a, b) => b.phien - a.phien).slice(0, HISTORY_LIMIT);
         lastData = dataDesc;
 
-        // Resolve prediction cũ
         if (lastPrediction) {
             const match = dataDesc.find(d => d.phien === lastPrediction.phienDuDoan);
             if (match) {
@@ -688,12 +674,18 @@ async function fetchAndAnalyze() {
                 });
                 if (predictionLog.length > LOG_LIMIT) predictionLog.pop();
 
-                if (!lastPrediction.noSignal) {
+                if (!lastPrediction.fallback) {
                     stats.total++;
-                    if (isCorrect) stats.correct++;
-                    else stats.wrong++;
+                    if (isCorrect) {
+                        stats.correct++;
+                        errorStreak = 0;
+                    } else {
+                        stats.wrong++;
+                        errorStreak++;
+                    }
                 } else {
-                    stats.noSignal_total++;
+                    stats.fallback_total++;
+                    if (isCorrect) stats.fallback_correct++;
                 }
 
                 console.log(`[RESOLVED] #${match.phien} | ${lastPrediction.side} → ${actual} | ${isCorrect ? 'ĐÚNG' : 'SAI'}`);
@@ -708,6 +700,7 @@ async function fetchAndAnalyze() {
                         confidence: lastPrediction.confidence,
                         tag: lastPrediction.tag,
                         correct: false,
+                        fallback: lastPrediction.fallback,
                         miss: true,
                         time: vnNow()
                     });
@@ -717,7 +710,6 @@ async function fetchAndAnalyze() {
             }
         }
 
-        // Prediction mới — dùng toàn bộ history ASC
         if (!lastPrediction && normalized.length >= OMEGA_CONFIG.minHistory) {
             const omega = omegaPredict(normalized);
             const nextPhien = dataDesc[0].phien + 1;
@@ -742,10 +734,8 @@ async function fetchAndAnalyze() {
                 tag: tagParts.join(" · "),
                 info: `P(TAI)=${(omega.probability * 100).toFixed(1)}% · ${topSig || 'no strong pattern'}`,
                 fallback: omega.status === "NO_SIGNAL",
-                noSignal: omega.status === "NO_SIGNAL",
                 timestamp: vnNow(),
-                iso: new Date().toISOString(),
-                raw: omega
+                iso: new Date().toISOString()
             };
 
             console.log(`[PREDICT] #${nextPhien} → ${lastPrediction.side} (${lastPrediction.confidence}%) | ${lastPrediction.tag}`);
@@ -758,4 +748,17 @@ async function fetchAndAnalyze() {
 }
 
 process.on('unhandledRejection', r => console.error('[UNHANDLED]', r));
-process.on('uncaughtException', e => console.error('[
+process.on('uncaughtException', e => console.error('[UNCAUGHT]', e));
+
+/* ============================================================
+ * UI
+ * ============================================================ */
+const HTML = String.raw`<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Công Nghệ Vip HHOANG 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=
