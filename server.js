@@ -1,18 +1,9 @@
 /**
- * server.js — Công Nghệ Vip PAK 2026
- * Dice Signal Analyzer — Omega Bridge v4 Engine
- * Developer: Anh Khôi
+ * server.js — Công Nghệ Vip Hoang 2026
+ * Omega Bridge v4 Engine
+ * Developer: HuyHoang
  *
  * Nguồn API: https://sunwin-taixiu-dulieu.onrender.com/data
- *
- * Engine: OMEGA BRIDGE v4
- *  - Multi-pattern: cầu bệt, 1-1, 2-2, 3-3, 4-4, 5-5, run shape
- *  - Markov 1..6, N-gram, Similarity (weighted distance)
- *  - Recency, Momentum, Transition matrix
- *  - Regime detection, Entropy, Conflict detection
- *  - Adaptive evidence weighting
- *  - NO_SIGNAL khi bất định
- *  - KHÔNG Martingale, KHÔNG loss chasing, KHÔNG đảo khi thua
  */
 
 'use strict';
@@ -51,6 +42,21 @@ const OMEGA_CONFIG = {
     noisyPenalty: 0.55,
     probabilityCompression: 0.82
 };
+
+/* ================================================================
+   TIME
+   ================================================================ */
+
+const VN_FMT = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false
+});
+
+function vnNow() {
+    return VN_FMT.format(new Date()).replace('T', ' ');
+}
 
 /* ================================================================
    OMEGA MATH
@@ -601,20 +607,6 @@ function omegaPredict(history) {
 }
 
 /* ================================================================
-   TIME
-   ================================================================ */
-
-const VN_FMT = new Intl.DateTimeFormat('sv-SE', {
-    timeZone: 'Asia/Ho_Chi_Minh',
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
-    hour12: false,
-});
-function vnNow() {
-    return VN_FMT.format(new Date()).replace('T', ' ');
-}
-
-/* ================================================================
    STATE
    ================================================================ */
 
@@ -688,7 +680,7 @@ async function fetchAndAnalyze() {
                     if (isCorrect) stats.fallback_correct++;
                 }
 
-                console.log(`[RESOLVED] #${match.phien} | ${lastPrediction.side} → ${actual} | ${isCorrect ? 'ĐÚNG' : 'SAI'}`);
+                console.log('[RESOLVED] #' + match.phien + ' | ' + lastPrediction.side + ' -> ' + actual + ' | ' + (isCorrect ? 'DUNG' : 'SAI'));
                 lastPrediction = null;
             } else {
                 const age = Date.now() - new Date(lastPrediction.iso).getTime();
@@ -724,21 +716,21 @@ async function fetchAndAnalyze() {
             if (omega.regime) tagParts.push(omega.regime);
 
             const topSig = omega.signals.slice(0, 3)
-                .map(s => `${s.name}:${s.direction}(${(s.probability * 100).toFixed(0)}%)`)
-                .join(" · ");
+                .map(s => s.name + ':' + s.direction + '(' + (s.probability * 100).toFixed(0) + '%)')
+                .join(' · ');
 
             lastPrediction = {
                 phienDuDoan: nextPhien,
                 side: side || (omega.direction === "T" ? "TAI" : "XIU"),
                 confidence: Math.max(1, Math.min(99, confPct)),
-                tag: tagParts.join(" · "),
-                info: `P(TAI)=${(omega.probability * 100).toFixed(1)}% · ${topSig || 'no strong pattern'}`,
+                tag: tagParts.join(' · '),
+                info: 'P(TAI)=' + (omega.probability * 100).toFixed(1) + '% · ' + (topSig || 'no strong pattern'),
                 fallback: omega.status === "NO_SIGNAL",
                 timestamp: vnNow(),
                 iso: new Date().toISOString()
             };
 
-            console.log(`[PREDICT] #${nextPhien} → ${lastPrediction.side} (${lastPrediction.confidence}%) | ${lastPrediction.tag}`);
+            console.log('[PREDICT] #' + nextPhien + ' -> ' + lastPrediction.side + ' (' + lastPrediction.confidence + '%) | ' + lastPrediction.tag);
         }
     } catch (err) {
         console.error('[FETCH ERROR]', err.message);
@@ -753,12 +745,10 @@ process.on('uncaughtException', e => console.error('[UNCAUGHT]', e));
 /* ============================================================
  * UI
  * ============================================================ */
+
 const HTML = String.raw`<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Công Nghệ Vip HHOANG 2026</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=
+<title>Công Nghệ
