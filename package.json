@@ -1,25 +1,19 @@
 
 {
-  "name": "sunwin-taixiu-analyzer",
+  "name": "hoang-pak-2026",
   "version": "1.0.0",
-  "description": "Sunwin Tài Xỉu Analyzer - TX_LogicPen_V4",
-  "main": "1.js",
+  "description": "Hoang 2026 - Omega Bridge v4",
+  "main": "server.js",
   "scripts": {
-    "start": "node 1.js",
-    "dev": "node 1.js"
+    "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.21.0",
+    "express": "^4.19.2",
     "axios": "^1.7.7"
   },
   "engines": {
     "node": ">=18.0.0"
   },
-  "keywords": [
-    "sunwin",
-    "taixiu",
-    "analyzer"
-  ],
-  "author": "Ông Chủ",
-  "license": "ISC"
+  "author": "HuyHoang",
+  "license": "MIT"
 }
